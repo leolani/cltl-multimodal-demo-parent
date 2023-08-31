@@ -62,3 +62,11 @@
 	path = cltl-g2ky
 	url = https://github.com/leolani/cltl-g2ky.git
 	branch = main
+[submodule "cltl-emotionrecognition"]
+	path = cltl-emotionrecognition
+	url = https://github.com/leolani/cltl-emotionrecognition.git
+	branch = main
+[submodule "cltl-requirements"]
+	path = cltl-requirements
+	url = https://github.com/leolani/cltl-requirements.git
+	branch = main
