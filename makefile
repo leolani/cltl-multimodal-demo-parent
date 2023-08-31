@@ -1,13 +1,13 @@
 SHELL = /bin/bash
 
-project_name ?= "cltl-eliza"
+project_name ?= "cltl-multimodal-demo"
 
 project_components = $(addprefix ${project_root}/, \
 		emissor \
 		cltl-requirements \
 		cltl-combot \
 		cltl-backend \
-		cltl-leolani-app \
+		cltl-multimodal-app \
 		cltl-leolani \
 		cltl-emissor-data \
 		cltl-knowledgerepresentation \
@@ -15,18 +15,10 @@ project_components = $(addprefix ${project_root}/, \
 		cltl-knowledgelinking \
 		cltl-languagegeneration \
 		cltl-mention-detection \
-		cltl-emotionrecognition \
-		cltl-dialogueclassification \
 		cltl-g2ky \
-		cltl-questionprocessor \
-		cltl-visualresponder \
-		cltl-about-agent \
-		cltl-eliza \
 		cltl-chat-ui \
 		cltl-face-recognition \
-		cltl-object-recognition \
-		cltl-vad \
-		cltl-asr)
+		cltl-object-recognition)
 
 git_local ?= ..
 git_remote ?= https://github.com/leolani
