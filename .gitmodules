@@ -1,7 +1,3 @@
-[submodule "cltl-requirements"]
-	path = cltl-requirements
-	url = https://github.com/leolani/cltl-requirements.git
-	branch = main
 [submodule "cltl-combot"]
 	path = cltl-combot
 	url = https://github.com/leolani/cltl-combot.git
@@ -9,18 +5,6 @@
 [submodule "cltl-backend"]
 	path = cltl-backend
 	url = https://github.com/leolani/cltl-backend.git
-	branch = main
-[submodule "cltl-eliza"]
-	path = cltl-eliza
-	url = https://github.com/leolani/cltl-eliza.git
-	branch = main
-[submodule "cltl-asr"]
-	path = cltl-asr
-	url = https://github.com/leolani/cltl-asr.git
-	branch = main
-[submodule "cltl-vad"]
-	path = cltl-vad
-	url = https://github.com/leolani/cltl-vad.git
 	branch = main
 [submodule "cltl-chat-ui"]
 	path = cltl-chat-ui
@@ -37,10 +21,6 @@
 [submodule "emissor"]
 	path = emissor
 	url = https://github.com/leolani/emissor.git
-	branch = main
-[submodule "cltl-leolani-app"]
-	path = cltl-leolani-app
-	url = https://github.com/leolani/cltl-leolani-app.git
 	branch = main
 [submodule "cltl-leolani"]
 	path = cltl-leolani
@@ -81,24 +61,4 @@
 [submodule "cltl-g2ky"]
 	path = cltl-g2ky
 	url = https://github.com/leolani/cltl-g2ky.git
-	branch = main
-[submodule "cltl-about-agent"]
-	path = cltl-about-agent
-	url = https://github.com/leolani/cltl-about-agent.git
-	branch = main
-[submodule "cltl-visualresponder"]
-	path = cltl-visualresponder
-	url = https://github.com/leolani/cltl-visualresponder.git
-	branch = main
-[submodule "cltl-questionprocessor"]
-	path = cltl-questionprocessor
-	url = https://github.com/leolani/cltl-questionprocessor.git
-	branch = main
-[submodule "cltl-emotionrecognition"]
-	path = cltl-emotionrecognition
-	url = https://github.com/leolani/cltl-emotionrecognition.git
-	branch = main
-[submodule "cltl-dialogueclassification"]
-	path = cltl-dialogueclassification
-	url = https://github.com/leolani/cltl-dialogueclassification.git
 	branch = main
