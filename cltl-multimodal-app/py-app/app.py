@@ -1,12 +1,11 @@
+import cltl.leolani.gestures as gestures
 import logging.config
 import logging.config
 import os
 import pathlib
 import random
-import time
-
-import cltl.leolani.gestures as gestures
 import requests
+import time
 from cltl.about.about import AboutImpl
 from cltl.about.api import About
 from cltl.backend.api.backend import Backend
@@ -34,6 +33,9 @@ from cltl.combot.infra.event import Event
 from cltl.combot.infra.event.memory import SynchronousEventBusContainer
 from cltl.combot.infra.event_log import LogWriter
 from cltl.combot.infra.resource.threaded import ThreadedResourceContainer
+from cltl.dialogue_act_classification.api import DialogueActClassifier
+from cltl.dialogue_act_classification.midas_classifier import MidasDialogTagger
+from cltl.dialogue_act_classification.silicone_classifier import SiliconeDialogueActClassifier
 from cltl.emissordata.api import EmissorDataStorage
 from cltl.emissordata.file_storage import EmissorDataFileStorage
 from cltl.emotion_extraction.api import EmotionExtractor
@@ -67,6 +69,16 @@ from cltl.visualresponder.api import VisualResponder
 from cltl.visualresponder.visualresponder import VisualResponderImpl
 from cltl_service.about.service import AboutService
 from cltl_service.asr.service import AsrService
+from cltl_service.dialogue_act_classification.service import DialogueActClassificationService
+from cltl_service.emotion_extraction.service import EmotionExtractionService
+from cltl_service.emotion_responder.service import EmotionResponderService
+from cltl_service.face_emotion_extraction.service import FaceEmotionExtractionService
+from cltl_service.vad.service import VadService
+from cltl_service.visualresponder.service import VisualResponderService
+from flask import Flask
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
+from werkzeug.serving import run_simple
+
 from cltl_service.backend.backend import BackendService
 from cltl_service.backend.storage import StorageService
 from cltl_service.bdi.service import BDIService
@@ -76,10 +88,7 @@ from cltl_service.combot.event_log.service import EventLogService
 from cltl_service.context.service import ContextService
 from cltl_service.emissordata.client import EmissorDataClient
 from cltl_service.emissordata.service import EmissorDataService
-from cltl_service.emotion_extraction.service import EmotionExtractionService
-from cltl_service.emotion_responder.service import EmotionResponderService
 from cltl_service.entity_linking.service import DisambiguationService
-from cltl_service.face_emotion_extraction.service import FaceEmotionExtractionService
 from cltl_service.face_recognition.service import FaceRecognitionService
 from cltl_service.g2ky.service import GetToKnowYouService
 from cltl_service.idresolution.service import IdResolutionService
@@ -92,18 +101,8 @@ from cltl_service.nlp.service import NLPService
 from cltl_service.object_recognition.service import ObjectRecognitionService
 from cltl_service.reply_generation.service import ReplyGenerationService
 from cltl_service.triple_extraction.service import TripleExtractionService
-from cltl_service.vad.service import VadService
 from cltl_service.vector_id.service import VectorIdService
-from cltl_service.visualresponder.service import VisualResponderService
 from emissor.representation.util import serializer as emissor_serializer
-from flask import Flask
-from werkzeug.middleware.dispatcher import DispatcherMiddleware
-from werkzeug.serving import run_simple
-
-from cltl.dialogue_act_classification.api import DialogueActClassifier
-from cltl.dialogue_act_classification.midas_classifier import MidasDialogTagger
-from cltl.dialogue_act_classification.silicone_classifier import SiliconeDialogueActClassifier
-from cltl_service.dialogue_act_classification.service import DialogueActClassificationService
 
 logging.config.fileConfig(os.environ.get('CLTL_LOGGING_CONFIG', default='config/logging.config'),
                           disable_existing_loggers=False)
@@ -258,106 +257,6 @@ class EmissorStorageContainer(InfraContainer):
             super().stop()
 
 
-
-class VADContainer(InfraContainer):
-    @property
-    @singleton
-    def vad_service(self) -> VadService:
-        config = self.config_manager.get_config("cltl.vad")
-
-        implementation = config.get("implementation")
-        if not implementation:
-            logger.warning("No VAD configured")
-            return False
-        if implementation != "webrtc":
-            raise ValueError("Unsupported VAD implementation: " + implementation)
-
-        config = self.config_manager.get_config("cltl.vad.webrtc")
-        activity_window = config.get_int("activity_window")
-        activity_threshold = config.get_float("activity_threshold")
-        allow_gap = config.get_int("allow_gap")
-        padding = config.get_int("padding")
-        storage = None
-        # DEBUG
-        # storage = "/Users/tkb/automatic/workspaces/robo/eliza-parent/cltl-eliza-app/py-app/storage/audio/debug/vad"
-
-        vad = WebRtcVAD(activity_window, activity_threshold, allow_gap, padding, storage=storage)
-
-        return VadService.from_config(vad, self.event_bus, self.resource_manager, self.config_manager)
-
-    def start(self):
-        super().start()
-        if self.vad_service:
-            logger.info("Start VAD")
-            self.vad_service.start()
-
-    def stop(self):
-        try:
-            if self.vad_service:
-                logger.info("Stop VAD")
-                self.vad_service.stop()
-        finally:
-            super().stop()
-
-
-class ASRContainer(EmissorStorageContainer, InfraContainer):
-    @property
-    @singleton
-    def asr_service(self) -> AsrService:
-        config = self.config_manager.get_config("cltl.asr")
-        sampling_rate = config.get_int("sampling_rate")
-        implementation = config.get("implementation")
-
-        storage = None
-        # DEBUG
-        # storage = "/Users/tkb/automatic/workspaces/robo/eliza-parent/cltl-eliza-app/py-app/storage/audio/debug/asr"
-
-        if implementation == "google":
-            from cltl.asr.google_asr import GoogleASR
-            impl_config = self.config_manager.get_config("cltl.asr.google")
-            asr = GoogleASR(impl_config.get("language"), impl_config.get_int("sampling_rate"),
-                            hints=impl_config.get("hints", multi=True))
-        elif implementation == "whisper":
-            from cltl.asr.whisper_asr import WhisperASR
-            impl_config = self.config_manager.get_config("cltl.asr.whisper")
-            asr = WhisperASR(impl_config.get("model"), impl_config.get("language"), storage=storage)
-        elif implementation == "speechbrain":
-            from cltl.asr.speechbrain_asr import SpeechbrainASR
-            impl_config = self.config_manager.get_config("cltl.asr.speechbrain")
-            model = impl_config.get("model")
-            asr = SpeechbrainASR(model, storage=storage)
-        elif implementation == "wav2vec":
-            from cltl.asr.wav2vec_asr import Wav2Vec2ASR
-            impl_config = self.config_manager.get_config("cltl.asr.wav2vec")
-            model = impl_config.get("model")
-            asr = Wav2Vec2ASR(model, sampling_rate=sampling_rate, storage=storage)
-        elif not implementation:
-            asr = False
-        else:
-            raise ValueError("Unsupported implementation " + implementation)
-
-        if asr:
-            return AsrService.from_config(asr, self.emissor_data_client,
-                                          self.event_bus, self.resource_manager, self.config_manager)
-        else:
-            logger.warning("No ASR implementation configured")
-            return False
-
-    def start(self):
-        super().start()
-        if self.asr_service:
-            logger.info("Start ASR")
-            self.asr_service.start()
-
-    def stop(self):
-        try:
-            if self.asr_service:
-                logger.info("Stop ASR")
-                self.asr_service.stop()
-        finally:
-            super().stop()
-
-
 class TripleExtractionContainer(InfraContainer):
     @property
     @singleton
@@ -482,47 +381,6 @@ class DisambiguationContainer(BrainContainer, InfraContainer):
             self.disambiguation_service.stop()
         finally:
             super().stop()
-
-
-class DialogueActClassficationContainer(InfraContainer):
-    @property
-    @singleton
-    def dialogue_act_classifier(self) -> DialogueActClassifier:
-        config = self.config_manager.get_config("cltl.dialogue_act_classification")
-        implementation = config.get("implementation")
-
-        if implementation == "midas":
-            config = self.config_manager.get_config("cltl.dialogue_act_classification.midas")
-            return MidasDialogTagger(config.get("model"))
-        elif implementation == "silicone":
-            return SiliconeDialogueActClassifier()
-        elif not implementation:
-            logger.warning("No DialogueClassifier implementation configured")
-            return False
-        else:
-            raise ValueError("Unsupported DialogueClassifier implementation: " + implementation)
-
-    @property
-    @singleton
-    def dialogue_act_classification_service(self) -> DialogueActClassificationService:
-        if self.dialogue_act_classifier:
-            return DialogueActClassificationService.from_config(self.dialogue_act_classifier,
-                                                                self.event_bus, self.resource_manager,
-                                                                self.config_manager)
-        else:
-            return False
-
-    def start(self):
-        super().start()
-        if self.dialogue_act_classification_service:
-            logger.info("Start Dialogue Act Classification Service")
-            self.dialogue_act_classification_service.start()
-
-    def stop(self):
-        if self.dialogue_act_classification_service:
-            logger.info("Stop Dialogue Act Classification Service")
-            self.dialogue_act_classification_service.stop()
-        super().stop()
 
 
 class ReplierContainer(BrainContainer, EmissorStorageContainer, InfraContainer):
@@ -682,95 +540,6 @@ class VectorIdContainer(InfraContainer):
             super().stop()
 
 
-class EmotionRecognitionContainer(InfraContainer):
-    @property
-    @singleton
-    def emotion_extractor(self) -> EmotionExtractor:
-        config = self.config_manager.get_config("cltl.emotion_recognition")
-        implementation = config.get("impl")
-
-        if implementation == "Go":
-            config = self.config_manager.get_config("cltl.emotion_recognition.go")
-            detector = GoEmotionDetector(config.get("model"))
-        elif implementation == "Vader":
-            detector = VaderSentimentDetector()
-        elif not implementation:
-            logger.warning("No EmotionExtractor implementation configured")
-            detector = False
-        else:
-            raise ValueError("Unknown emotion extractor implementation: " + implementation)
-
-        return detector
-
-    @property
-    @singleton
-    def face_emotion_extractor(self) -> FaceEmotionExtractor:
-        config = self.config_manager.get_config("cltl.face_emotion_recognition")
-
-        implementation = config.get("implementation")
-        if not implementation:
-            logger.warning("No FaceEmotionExtractor configured")
-            return False
-        if implementation != "emotic":
-            raise ValueError("Unknown FaceEmotionExtractor implementation: " + implementation)
-
-        config = self.config_manager.get_config("cltl.face_emotion_recognition.emotic")
-
-        return ContextFaceEmotionExtractor(config.get("model_context"),
-                                           config.get("model_body"),
-                                           config.get("model_emotic"),
-                                           config.get("value_thresholds"))
-
-    @property
-    @singleton
-    def emotion_responder(self) -> EmotionResponder:
-        return EmotionResponderImpl()
-
-    @property
-    @singleton
-    def emotion_recognition_service(self) -> EmotionExtractionService:
-        if self.emotion_extractor:
-            return EmotionExtractionService.from_config(self.emotion_extractor, self.event_bus,
-                                                        self.resource_manager, self.config_manager)
-        else:
-            return False
-
-    @property
-    @singleton
-    def face_emotion_recognition_service(self) -> FaceEmotionExtractionService:
-        if self.face_emotion_extractor:
-            return FaceEmotionExtractionService.from_config(self.face_emotion_extractor, self.event_bus,
-                                                            self.resource_manager, self.config_manager)
-        else:
-            return False
-
-    @property
-    @singleton
-    def emotion_responder_service(self) -> EmotionResponderService:
-        return EmotionResponderService.from_config(self.emotion_responder, self.event_bus,
-                                                   self.resource_manager, self.config_manager)
-
-    def start(self):
-        super().start()
-        if self.emotion_recognition_service:
-            logger.info("Start Emotion Recognition service")
-            self.emotion_recognition_service.start()
-        if self.face_emotion_recognition_service:
-            logger.info("Start Face Emotion Recognition service")
-            self.face_emotion_recognition_service.start()
-
-    def stop(self):
-        try:
-            if self.face_emotion_recognition_service:
-                logger.info("Stop Face Emotion Recognition service")
-                self.face_emotion_recognition_service.stop()
-            if self.emotion_recognition_service:
-                logger.info("Stop Emotion Recognition service")
-                self.emotion_recognition_service.stop()
-        finally:
-            super().stop()
-
-
 class NLPContainer(InfraContainer):
     @property
     @singleton
@@ -851,56 +620,6 @@ class ChatUIContainer(InfraContainer):
         try:
             logger.info("Stop Chat UI")
             self.chatui_service.stop()
-        finally:
-            super().stop()
-
-
-class AboutAgentContainer(EmissorStorageContainer, InfraContainer):
-    @property
-    @singleton
-    def about_agent(self) -> About:
-        return AboutImpl()
-
-    @property
-    @singleton
-    def about_agent_service(self) -> GetToKnowYouService:
-        return AboutService.from_config(self.about_agent, self.emissor_data_client,
-                                        self.event_bus, self.resource_manager, self.config_manager)
-
-    def start(self):
-        logger.info("Start AboutAgent")
-        super().start()
-        self.about_agent_service.start()
-
-    def stop(self):
-        try:
-            logger.info("Stop AboutAgent")
-            self.about_agent_service.stop()
-        finally:
-            super().stop()
-
-
-class VisualResponderContainer(EmissorStorageContainer, InfraContainer):
-    @property
-    @singleton
-    def visual_responder(self) -> VisualResponder:
-        return VisualResponderImpl()
-
-    @property
-    @singleton
-    def visual_responder_service(self) -> VisualResponderService:
-        return VisualResponderService.from_config(self.visual_responder, self.emissor_data_client,
-                                        self.event_bus, self.resource_manager, self.config_manager)
-
-    def start(self):
-        logger.info("Start VisualResponder")
-        super().start()
-        self.visual_responder_service.start()
-
-    def stop(self):
-        try:
-            logger.info("Stop VisualResponder")
-            self.visual_responder_service.stop()
         finally:
             super().stop()
 
@@ -1050,12 +769,10 @@ class G2KYContainer(LeolaniContainer, EmissorStorageContainer, InfraContainer):
 
 
 class ApplicationContainer(ChatUIContainer, G2KYContainer, LeolaniContainer,
-                           AboutAgentContainer, VisualResponderContainer,
                            TripleExtractionContainer, DisambiguationContainer, ReplierContainer, BrainContainer,
-                           NLPContainer, MentionExtractionContainer, DialogueActClassficationContainer,
+                           NLPContainer, MentionExtractionContainer,
                            FaceRecognitionContainer, VectorIdContainer,
-                           ObjectRecognitionContainer, EmotionRecognitionContainer,
-                           ASRContainer, VADContainer,
+                           ObjectRecognitionContainer,
                            EmissorStorageContainer, BackendContainer):
     @property
     @singleton

@@ -1,10 +1,7 @@
 cltl.backend[impl,host,service]
-cltl.asr[impl,whisper,google,service]
-cltl.vad[impl,service]
 cltl.face-recognition[impl,service]
 cltl.object-recognition[impl,service]
-cltl.dialogueclassification[impl, service]
-cltl.emotionrecognition[nltk, go, face, service]
+cltl.emotionrecognition
 cltl.mention-detection[impl, service]
 cltl.brain[service]
 cltl.triple_extraction[service]
@@ -13,11 +10,7 @@ cltl.reply_generation[service]
 cltl.emissor-data[impl,service,client]
 cltl.g2ky[impl,service]
 cltl.leolani
-cltl.factual_question_processing[service]
-cltl.visualresponder
-cltl.about-agent
 cltl.chat-ui[service]
-cltl.eliza
 
 flask
 werkzeug

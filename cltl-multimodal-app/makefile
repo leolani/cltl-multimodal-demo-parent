@@ -7,22 +7,14 @@ project_dependencies ?= $(addprefix $(project_root)/, \
 		cltl-backend \
 		cltl-face-recognition \
 		cltl-object-recognition \
-		cltl-vad \
-		cltl-asr \
-		cltl-dialogueclassification \
 		cltl-emissor-data \
+		cltl-emotionrecognition \
 		cltl-knowledgerepresentation \
 		cltl-knowledgeextraction \
 		cltl-knowledgelinking \
 		cltl-languagegeneration \
 		cltl-mention-detection \
-		cltl-emotionrecognition \
-		cltl-dialogueclassification \
 		cltl-g2ky \
-		cltl-questionprocessor \
-		cltl-visualresponder \
-		cltl-about-agent \
-		cltl-eliza \
 		cltl-leolani \
 		cltl-chat-ui)
 
@@ -46,17 +38,6 @@ nltk.lock: venv
 	touch nltk.lock
 
 
-py-app/resources/face_models/models.lock:
-	mkdir -p py-app/resources/face_models
-	wget -qO- "https://vu.data.surfsara.nl/index.php/s/VmSbPHFMJSNExou/download" | tar xvz -C py-app/resources/face_models
-	touch py-app/resources/face_models/models.lock
-
-
-py-app/resources/midas-da-roberta/classifier.pt:
-	mkdir -p py-app/resources/midas-da-roberta
-	wget -O py-app/resources/midas-da-roberta/classifier.pt "https://vu.data.surfsara.nl/index.php/s/lRlx3VfSJzY4h6X/download"
-
-
 py-app/resources/conversational_triples/models.lock:
 	mkdir -p py-app/resources/conversational_triples
 	wget "https://vu.data.surfsara.nl/index.php/s/WpL1vFChlQpkbqW/download" -O py-app/resources/conversational_triples/models.zip
@@ -68,14 +49,10 @@ py-app/resources/conversational_triples/models.lock:
 .PHONY: build
 build: venv \
     nltk.lock spacy.lock \
-    py-app/resources/face_models/models.lock \
-    py-app/resources/midas-da-roberta/classifier.pt \
     py-app/resources/conversational_triples/models.lock
 
 
 .PHONY: clean
 clean: py-clean base-clean
 	rm -f spacy.lock nltk.lock
-	rm -rf py-app/resources/face_models
-	rm -rf py-app/resources/midas-da-roberta/classifier.pt
 	rm -rf py-app/resources/conversational_triples

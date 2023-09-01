@@ -10,6 +10,7 @@ project_components = $(addprefix ${project_root}/, \
 		cltl-multimodal-app \
 		cltl-leolani \
 		cltl-emissor-data \
+		cltl-emotionrecognition \
 		cltl-knowledgerepresentation \
 		cltl-knowledgeextraction \
 		cltl-knowledgelinking \
