@@ -1,13 +1,12 @@
-import cltl.leolani.gestures as gestures
 import logging.config
 import logging.config
 import os
 import pathlib
 import random
-import requests
 import time
-from cltl.about.about import AboutImpl
-from cltl.about.api import About
+
+import cltl.leolani.gestures as gestures
+import requests
 from cltl.backend.api.backend import Backend
 from cltl.backend.api.camera import CameraResolution, Camera
 from cltl.backend.api.microphone import Microphone
@@ -33,18 +32,8 @@ from cltl.combot.infra.event import Event
 from cltl.combot.infra.event.memory import SynchronousEventBusContainer
 from cltl.combot.infra.event_log import LogWriter
 from cltl.combot.infra.resource.threaded import ThreadedResourceContainer
-from cltl.dialogue_act_classification.api import DialogueActClassifier
-from cltl.dialogue_act_classification.midas_classifier import MidasDialogTagger
-from cltl.dialogue_act_classification.silicone_classifier import SiliconeDialogueActClassifier
 from cltl.emissordata.api import EmissorDataStorage
 from cltl.emissordata.file_storage import EmissorDataFileStorage
-from cltl.emotion_extraction.api import EmotionExtractor
-from cltl.emotion_extraction.utterance_go_emotion_extractor import GoEmotionDetector
-from cltl.emotion_extraction.utterance_vader_sentiment_extractor import VaderSentimentDetector
-from cltl.emotion_responder.api import EmotionResponder
-from cltl.emotion_responder.emotion_responder import EmotionResponderImpl
-from cltl.face_emotion_extraction.api import FaceEmotionExtractor
-from cltl.face_emotion_extraction.context_face_emotion_extractor import ContextFaceEmotionExtractor
 from cltl.face_recognition.api import FaceDetector
 from cltl.face_recognition.proxy import FaceDetectorProxy
 from cltl.friends.api import FriendStore
@@ -62,23 +51,8 @@ from cltl.object_recognition.api import ObjectDetector
 from cltl.object_recognition.proxy import ObjectDetectorProxy
 from cltl.reply_generation.thought_selectors.random_selector import RandomSelector
 from cltl.triple_extraction.chat_analyzer import ChatAnalyzer
-from cltl.vad.webrtc_vad import WebRtcVAD
 from cltl.vector_id.api import VectorIdentity
 from cltl.vector_id.clusterid import ClusterIdentity
-from cltl.visualresponder.api import VisualResponder
-from cltl.visualresponder.visualresponder import VisualResponderImpl
-from cltl_service.about.service import AboutService
-from cltl_service.asr.service import AsrService
-from cltl_service.dialogue_act_classification.service import DialogueActClassificationService
-from cltl_service.emotion_extraction.service import EmotionExtractionService
-from cltl_service.emotion_responder.service import EmotionResponderService
-from cltl_service.face_emotion_extraction.service import FaceEmotionExtractionService
-from cltl_service.vad.service import VadService
-from cltl_service.visualresponder.service import VisualResponderService
-from flask import Flask
-from werkzeug.middleware.dispatcher import DispatcherMiddleware
-from werkzeug.serving import run_simple
-
 from cltl_service.backend.backend import BackendService
 from cltl_service.backend.storage import StorageService
 from cltl_service.bdi.service import BDIService
@@ -103,6 +77,9 @@ from cltl_service.reply_generation.service import ReplyGenerationService
 from cltl_service.triple_extraction.service import TripleExtractionService
 from cltl_service.vector_id.service import VectorIdService
 from emissor.representation.util import serializer as emissor_serializer
+from flask import Flask
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
+from werkzeug.serving import run_simple
 
 logging.config.fileConfig(os.environ.get('CLTL_LOGGING_CONFIG', default='config/logging.config'),
                           disable_existing_loggers=False)
